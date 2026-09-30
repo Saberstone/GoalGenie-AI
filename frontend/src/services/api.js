@@ -1,10 +1,10 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'https://goalgenie-ai.onrender.com',
+  baseURL: 'https://goalgenie-ai.onrender.com/api',
 })
 
-// প্রতিটা request এ automatically token attach করে দেয় (যদি থাকে)
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
