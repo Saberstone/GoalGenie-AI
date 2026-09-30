@@ -8,7 +8,7 @@ import AddGoal from './pages/AddGoal'
 import ExpenseTracker from './pages/ExpenseTracker'
 import AdvisorChat from './pages/AdvisorChat'
 import AllocationPage from './pages/AllocationPage'
-import Signup from './pages/Signup'
+import Signup from './pages/SignUp'
 
 function App() {
   return (
