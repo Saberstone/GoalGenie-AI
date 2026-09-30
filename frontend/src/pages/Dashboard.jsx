@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import api from "../services/api";
-import ChatWidget from "../components/advisor/ChatWidget";
+import ChatWidget from "../Components/advisor/ChatWidget";
 
 const savingsTrend = [
   { month: "Apr", amount: 180000 },
