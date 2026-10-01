@@ -107,11 +107,27 @@ function Dashboard() {
         </div>
 
         <nav className="flex flex-col gap-1 flex-1">
-          <SidebarLink icon="🏠" label="Dashboard" active />
-          <SidebarLink icon="💰" label="Expenses" />
-          <SidebarLink icon="🤖" label="AI Advisor" />
-          <SidebarLink icon="⚖️" label="Allocation" />
-          <SidebarLink icon="⚙️" label="Settings" />
+          <SidebarLink
+            icon="🏠"
+            label="Dashboard"
+            active
+            onClick={() => navigate("/dashboard")}
+          />
+          <SidebarLink
+            icon="💰"
+            label="Expenses"
+            onClick={() => navigate("/expenses")}
+          />
+          <SidebarLink
+            icon="⚖️"
+            label="Allocation"
+            onClick={() => navigate("/allocation")}
+          />
+          <SidebarLink
+            icon="⚙️"
+            label="Settings"
+            onClick={() => navigate("/settings")}
+          />
         </nav>
 
         <button
@@ -434,9 +450,10 @@ function Dashboard() {
   );
 }
 
-function SidebarLink({ icon, label, active }) {
+function SidebarLink({ icon, label, active, onClick }) {
   return (
     <button
+      onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors text-left ${
         active
           ? "bg-primary-light text-primary"
@@ -530,7 +547,7 @@ function ActivityRow({ icon, title, time, color }) {
   );
 }
 
-  function ProgressRing({ percent }) {
+function ProgressRing({ percent }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
@@ -573,6 +590,5 @@ function ActivityRow({ icon, title, time, color }) {
     </svg>
   );
 }
-
 
 export default Dashboard;

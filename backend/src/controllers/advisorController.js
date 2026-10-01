@@ -166,4 +166,66 @@ const askAdvisor = async (req, res) => {
   }
 };
 
-module.exports = { askAdvisor };
+const User = require('../models/User');
+
+// @route POST /api/advisor/allocation
+const getAllocationAdvice = async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: 'AI is not configured on the server' });
+    }
+
+    const user = await User.findById(req.user._id);
+    const goals = await Goal.find({ userId: req.user._id, status: 'active' }).lean();
+
+    if (goals.length === 0) {
+      return res.status(200).json({ reply: 'You have no active goals yet. Add a goal first to get an allocation suggestion.' });
+    }
+
+    const income = user.monthlyIncome || 0;
+    const totalContribution = goals.reduce((s, g) => s + g.monthlyContribution, 0);
+    const fmt = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
+
+    const goalLines = goals
+      .map((g) => {
+        const remaining = Math.max(g.targetAmount - g.currentAmount, 0);
+        const share = totalContribution > 0 ? Math.round((g.monthlyContribution / totalContribution) * 100) : 0;
+        return `- "${g.title}" (${g.type}): currently gets ${fmt(g.monthlyContribution)}/month (${share}% of total contributions), ${fmt(remaining)} remaining${g.targetDate ? `, target date ${new Date(g.targetDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}` : ''}.`;
+      })
+      .join('\n');
+
+    const context = `Monthly income: ${fmt(income)}.
+Total committed to goals: ${fmt(totalContribution)} (${income > 0 ? Math.round((totalContribution / income) * 100) : 'unknown'}% of income).
+Remaining uncommitted income: ${fmt(Math.max(income - totalContribution, 0))}.
+
+Goals:\n${goalLines}`;
+
+    const prompt = `Based on this user's income and goals, suggest how they should prioritize or rebalance their monthly contributions across goals. If total contributions already exceed income, flag that clearly. Be specific with numbers, not vague. Keep it under 150 words.`;
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        systemInstruction: `${SYSTEM_PROMPT}\n\nUser's name: ${req.user.name}\n\n${context}`,
+        maxOutputTokens: 400,
+      },
+    });
+
+    res.status(200).json({
+      reply: response.text || 'Could not generate a suggestion right now.',
+      income,
+      totalContribution,
+      goals: goals.map((g) => ({
+        title: g.title,
+        type: g.type,
+        monthlyContribution: g.monthlyContribution,
+        share: totalContribution > 0 ? Math.round((g.monthlyContribution / totalContribution) * 100) : 0,
+      })),
+    });
+  } catch (error) {
+    console.error('Allocation advice error:', error.message);
+    res.status(500).json({ message: 'The Genie is having trouble right now. Please try again.' });
+  }
+};
+module.exports = { askAdvisor, getAllocationAdvice };

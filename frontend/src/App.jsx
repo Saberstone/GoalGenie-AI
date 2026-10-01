@@ -9,6 +9,7 @@ import ExpenseTracker from './pages/ExpenseTracker'
 import AdvisorChat from './pages/AdvisorChat'
 import AllocationPage from './pages/AllocationPage'
 import Signup from './pages/SignUp'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/advisor" element={<AdvisorChat />} />
         <Route path="/allocation" element={<AllocationPage />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>
   )
