@@ -83,6 +83,9 @@ function Dashboard() {
 
   const totalSaved = goals.reduce((sum, g) => sum + g.currentAmount, 0);
   const totalMonthly = goals.reduce((sum, g) => sum + g.monthlyContribution, 0);
+  const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+  const overallPercent =
+    totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
 
   const allocationData = goals.map((goal) => ({
     name: goal.title,
@@ -126,28 +129,49 @@ function Dashboard() {
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
           <div className="absolute -bottom-20 -left-10 w-56 h-56 bg-emerald-400/10 rounded-full blur-2xl" />
 
-          <div className="relative">
-            <p className="text-indigo-100 text-sm mb-1">Welcome back</p>
-            <h1 className="text-3xl font-bold mb-3">
-              Hi, {user?.name || "there"} 👋
-            </h1>
-            <p className="text-indigo-100 max-w-lg leading-relaxed">
-              {goals.length > 0
-                ? `You're saving ₹${totalMonthly.toLocaleString("en-IN")}/month across ${goals.length} goal${goals.length > 1 ? "s" : ""}.`
-                : "Let's set up your first goal and start planning your financial future."}
-            </p>
+          <div className="relative flex flex-col sm:flex-row items-center sm:items-stretch justify-between gap-6">
+            <div>
+              <p className="text-indigo-100 text-sm mb-1">Welcome back</p>
+              <h1 className="text-3xl font-bold mb-3">
+                Hi, {user?.name || "there"} 👋
+              </h1>
+              <p className="text-indigo-100 max-w-lg leading-relaxed">
+                {goals.length > 0
+                  ? `You're saving ₹${totalMonthly.toLocaleString("en-IN")}/month across ${goals.length} goal${goals.length > 1 ? "s" : ""}.`
+                  : "Let's set up your first goal and start planning your financial future."}
+              </p>
+            </div>
+
+            {goals.length > 0 && (
+              <div className="flex flex-col items-center shrink-0">
+                <ProgressRing percent={overallPercent} />
+                <p className="text-xs text-indigo-100 mt-2 text-center">
+                  Overall progress
+                  <br />
+                  across all goals
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <QuickAction icon="💸" label="Add Expense" onClick={() => navigate("/expenses")} />
+          <QuickAction
+            icon="💸"
+            label="Add Expense"
+            onClick={() => navigate("/expenses")}
+          />
           <QuickAction
             icon="🎯"
             label="New Goal"
             onClick={() => navigate("/add-goal")}
           />
-          <QuickAction icon="📊" label="View Reports" onClick={() => navigate("/reports")} />
+          <QuickAction
+            icon="📊"
+            label="View Reports"
+            onClick={() => navigate("/reports")}
+          />
         </div>
 
         {/* Stats Strip */}
@@ -505,5 +529,50 @@ function ActivityRow({ icon, title, time, color }) {
     </div>
   );
 }
+
+  function ProgressRing({ percent }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <svg width="110" height="110" viewBox="0 0 100 100" className="-rotate-90">
+      <circle
+        cx="50"
+        cy="50"
+        r={radius}
+        fill="none"
+        stroke="rgba(255,255,255,0.2)"
+        strokeWidth="8"
+      />
+      <circle
+        cx="50"
+        cy="50"
+        r={radius}
+        fill="none"
+        stroke="white"
+        strokeWidth="8"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        style={{ transition: "stroke-dashoffset 0.6s ease" }}
+      />
+      <text
+        x="50"
+        y="50"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="white"
+        fontSize="20"
+        fontWeight="700"
+        className="rotate-90"
+        style={{ transformOrigin: "50px 50px" }}
+      >
+        {percent}%
+      </text>
+    </svg>
+  );
+}
+
 
 export default Dashboard;
