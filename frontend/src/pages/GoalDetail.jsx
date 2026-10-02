@@ -26,6 +26,7 @@ function GoalDetail() {
   const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
+  const [simulatedContribution, setSimulatedContribution] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -99,7 +100,7 @@ function GoalDetail() {
 
   const percent = Math.min(
     Math.round((goal.currentAmount / goal.targetAmount) * 100),
-    100
+    100,
   );
   const remaining = Math.max(goal.targetAmount - goal.currentAmount, 0);
   const monthsLeft =
@@ -107,7 +108,7 @@ function GoalDetail() {
       ? Math.ceil(remaining / goal.monthlyContribution)
       : null;
   const details = Object.entries(goal.specificDetails || {}).filter(
-    ([, v]) => v !== "" && v !== null && v !== undefined
+    ([, v]) => v !== "" && v !== null && v !== undefined,
   );
 
   return (
@@ -133,7 +134,7 @@ function GoalDetail() {
                 {goal.targetDate &&
                   ` · Target ${new Date(goal.targetDate).toLocaleDateString(
                     "en-IN",
-                    { month: "short", year: "numeric" }
+                    { month: "short", year: "numeric" },
                   )}`}
               </p>
             </div>
@@ -161,7 +162,10 @@ function GoalDetail() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Stat label="Still to save" value={`₹${remaining.toLocaleString("en-IN")}`} />
+          <Stat
+            label="Still to save"
+            value={`₹${remaining.toLocaleString("en-IN")}`}
+          />
           <Stat
             label="Monthly contribution"
             value={`₹${goal.monthlyContribution.toLocaleString("en-IN")}`}
@@ -172,10 +176,10 @@ function GoalDetail() {
               goal.status === "completed"
                 ? "Done!"
                 : monthsLeft
-                ? monthsLeft >= 12
-                  ? `${Math.floor(monthsLeft / 12)} yr ${monthsLeft % 12} mo`
-                  : `${monthsLeft} months`
-                : "—"
+                  ? monthsLeft >= 12
+                    ? `${Math.floor(monthsLeft / 12)} yr ${monthsLeft % 12} mo`
+                    : `${monthsLeft} months`
+                  : "—"
             }
           />
         </div>
@@ -206,10 +210,26 @@ function GoalDetail() {
           </div>
         )}
 
+        {/* What-If Simulator */}
+        {goal.status !== "completed" && (
+          <div className="bg-white rounded-2xl border border-gray-300/60 shadow-md p-6 mb-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">
+              🔮 What if I save differently?
+            </h2>
+            <p className="text-xs text-gray-400 mb-5">
+              Drag the slider to see how your timeline changes
+            </p>
+
+            <WhatIfSimulator goal={goal} />
+          </div>
+        )}
+
         {/* Specific details */}
         {details.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-300/60 shadow-md p-6 mb-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Goal details</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">
+              Goal details
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {details.map(([key, value]) => (
                 <div key={key}>
@@ -243,6 +263,97 @@ function Stat({ label, value }) {
     <div className="bg-white rounded-2xl border border-gray-300/60 shadow-md p-5">
       <p className="text-sm text-gray-500 mb-1">{label}</p>
       <p className="text-xl font-semibold text-gray-900">{value}</p>
+    </div>
+  );
+}
+
+function WhatIfSimulator({ goal }) {
+  const remaining = Math.max(goal.targetAmount - goal.currentAmount, 0);
+  const currentContribution = goal.monthlyContribution || 0;
+
+  // Slider range: current theke 3x porjonto, ba minimum ₹1000
+  const maxSlider = Math.max(currentContribution * 3, 5000);
+  const [value, setValue] = useState(currentContribution);
+
+  const months = value > 0 ? Math.ceil(remaining / value) : null;
+  const currentMonths =
+    currentContribution > 0 ? Math.ceil(remaining / currentContribution) : null;
+
+  const monthsDiff = months && currentMonths ? currentMonths - months : 0;
+
+  const formatMonths = (m) => {
+    if (!m) return "—";
+    if (m >= 12) return `${Math.floor(m / 12)} yr ${m % 12} mo`;
+    return `${m} months`;
+  };
+
+  const getDate = (m) => {
+    if (!m) return "—";
+    const d = new Date();
+    d.setMonth(d.getMonth() + m);
+    return d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-gray-500">Monthly contribution</span>
+        <span className="text-lg font-bold text-primary">
+          ₹{value.toLocaleString("en-IN")}
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min="0"
+        max={maxSlider}
+        step="500"
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className="w-full accent-primary cursor-pointer"
+      />
+
+      <div className="flex items-center justify-between text-xs text-gray-400 mt-1 mb-6">
+        <span>₹0</span>
+        <span>₹{maxSlider.toLocaleString("en-IN")}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <p className="text-xs text-gray-400 mb-1">Time to complete</p>
+          <p className="text-xl font-semibold text-gray-900">
+            {formatMonths(months)}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">~{getDate(months)}</p>
+        </div>
+
+        <div
+          className={`rounded-xl p-4 ${
+            monthsDiff > 0
+              ? "bg-success-light"
+              : monthsDiff < 0
+              ? "bg-red-50"
+              : "bg-gray-50"
+          }`}
+        >
+          <p className="text-xs text-gray-400 mb-1">vs current plan</p>
+          <p
+            className={`text-xl font-semibold ${
+              monthsDiff > 0
+                ? "text-success"
+                : monthsDiff < 0
+                ? "text-red-600"
+                : "text-gray-900"
+            }`}
+          >
+            {monthsDiff > 0
+              ? `${monthsDiff} mo faster`
+              : monthsDiff < 0
+              ? `${Math.abs(monthsDiff)} mo slower`
+              : "Same pace"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
